@@ -52,6 +52,8 @@ class LinDynEnv(gym.Env):
     self.seed()
     self.viewer = None
     self.x = None
+    self.action_space = spaces.Box(low=-1, high=1, shape=(self.states_dim,))
+    self.observation_space = spaces.Box(low=-1, high=1, shape=(self.states_dim,))
 
   def seed(self, seed=None):
     self.np_random, seed = seeding.np_random(seed)
@@ -61,11 +63,11 @@ class LinDynEnv(gym.Env):
   def step(self, action):
     reward = -(np.dot(self.x.T, self.x) + np.dot(action.T,action))
     if self.extra_dim > 0:
-      x_prime = np.asarray(A.dot(self.x[:-extra_dim])) #in case only one dimension is relevant
+      x_prime = np.asarray(self.A.dot(self.x[:-extra_dim])) #in case only one dimension is relevant
     else:
-      x_prime = A.dot(self.x)
+      x_prime = self.A.dot(self.x)
 
-    x_prime = add_irrelevant_features(x_prime, extra_dim=self.extra_dim, noise_level=0.4)
+    x_prime = self.add_irrelevant_features(x_prime, extra_dim=self.extra_dim, noise_level=0.4)
     x_prime = x_prime + action
      
     self.x = x_prime
@@ -85,7 +87,7 @@ class LinDynEnv(gym.Env):
       self.viewer = None
 
 
-  def add_irrelevant_features(x, extra_dim, noise_level = 0.4):
+  def add_irrelevant_features(self, x, extra_dim, noise_level = 0.4):
     if isinstance(x, np.ndarray):
       x_irrel= noise_level*np.random.randn(1, extra_dim).reshape(-1,)
       return np.hstack([x, x_irrel])
